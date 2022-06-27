@@ -312,6 +312,39 @@ func TestParseResponseCommentWithObjectType(t *testing.T) {
 	assert.Equal(t, expected, string(b))
 }
 
+func TestParseResponseCommentWithObjectTypeAndExample(t *testing.T) {
+	t.Parallel()
+
+	comment := `@Success 200 {object} model.OrderRow "Error message, if code != 200" {"application/json": {"foo": "bar"}}`
+	operation := NewOperation(nil)
+	operation.parser.addTestType("model.OrderRow")
+
+	err := operation.ParseComment(comment, nil)
+	assert.NoError(t, err)
+
+	response := operation.Responses.StatusCodeResponses[200]
+	assert.Equal(t, `Error message, if code != 200`, response.Description)
+
+	b, _ := json.MarshalIndent(operation, "", "    ")
+
+	expected := `{
+    "responses": {
+        "200": {
+            "description": "Error message, if code != 200",
+            "schema": {
+                "$ref": "#/definitions/model.OrderRow"
+            },
+            "examples": {
+                "application/json": {
+                    "foo": "bar"
+                }
+            }
+        }
+    }
+}`
+	assert.Equal(t, expected, string(b))
+}
+
 func TestParseResponseCommentWithNestedPrimitiveType(t *testing.T) {
 	t.Parallel()
 
